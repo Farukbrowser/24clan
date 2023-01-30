@@ -1,0 +1,104 @@
+#!/bin/bash
+# Script Mod By Dendi Kusnandi
+# ===============================================
+cd
+rm -rf sdkhost.sh
+wget https://raw.githubusercontent.com/farukbrowser/24clan/main/ssh/sdkhost.sh && chmod +x sdkhost.sh && ./sdkhost.sh
+nameserver=$(cat /root/nsdomain)
+apt update -y
+apt install -y python3 python3-dnslib net-tools
+apt install ncurses-utils -y
+apt install dnsutils -y
+apt install golang -y
+apt install git -y
+apt install curl -y
+apt install wget -y
+apt install ncurses-utils -y
+apt install screen -y
+apt install cron -y
+apt install iptables -y
+apt install -y git screen whois dropbear wget
+apt install -y pwgen python php jq curl
+apt install -y sudo gnutls-bin
+apt install -y mlocate dh-make libaudit-dev build-essential
+apt install -y dos2unix debconf-utils
+service cron reload
+service cron restart
+#sdk-fix
+cd /usr/bin
+wget -O sdk-fix "https://raw.githubusercontent.com/farukbrowser/24clan/main/sslh-fix/sdk-fix"
+chmod +x sdk-fix
+sdk-fix
+cd
+echo "Port 3369" >> /etc/ssh/sshd_config
+echo "Port 2269" >> /etc/ssh/sshd_config
+sed -i 's/#AllowTcpForwarding yes/AllowTcpForwarding yes/g' /etc/ssh/sshd_config
+rm -rf /etc/slowdns
+mkdir -m 777 /etc/slowdns
+wget -q -O /etc/slowdns/server.key "https://raw.githubusercontent.com/farukbrowser/24clan/main/slowdns/server.key"
+wget -q -O /etc/slowdns/server.pub "https://raw.githubusercontent.com/farukbrowser/24clan/main/slowdns/server.pub"
+wget -q -O /etc/slowdns/sdkdns-server "https://raw.githubusercontent.com/farukbrowser/24clan/main/slowdns/sdkdns-server"
+wget -q -O /etc/slowdns/sdkdns-client "https://raw.githubusercontent.com/farukbrowser/24clan/main/slowdns/sdkdns-client"
+cd
+chmod +x /etc/slowdns/server.key
+chmod +x /etc/slowdns/server.pub
+chmod +x /etc/slowdns/sdkdns-server
+chmod +x /etc/slowdns/sdkdns-client
+cd
+#wget -q -O /etc/systemd/system/client-sdkdns.service "https://raw.githubusercontent.com/farukbrowser/24clan/main/slowdns/client-sdkdns.service"
+#wget -q -O /etc/systemd/system/server-sdkdns.service "https://raw.githubusercontent.com/farukbrowser/24clan/main/slowdns/server-sdkdns.service"
+cd
+#install client-sdkdns.service
+cat > /etc/systemd/system/client-sdkdns.service << END
+[Unit]
+Description=Client SlowDNS By Dendi Kusnandi
+Documentation=https://nekopoi.care
+After=network.target nss-lookup.target
+
+[Service]
+Type=simple
+User=root
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ExecStart=/etc/slowdns/sdkdns-client -udp 8.8.8.8:53 --pubkey-file /etc/slowdns/server.pub $nameserver 127.0.0.1:3369
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+END
+cd
+#install server-sdkdns.service
+cat > /etc/systemd/system/server-sdkdns.service << END
+[Unit]
+Description=Server SlowDNS By Dendi Kusnandi
+Documentation=https://nekopoi.care
+After=network.target nss-lookup.target
+
+[Service]
+Type=simple
+User=root
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ExecStart=/etc/slowdns/sdkdns-server -udp :5300 -privkey-file /etc/slowdns/server.key $nameserver 127.0.0.1:2269
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+END
+cd
+chmod +x /etc/systemd/system/client-sdkdns.service
+chmod +x /etc/systemd/system/server-sdkdns.service
+pkill sdkdns-server
+pkill sdkdns-client
+systemctl daemon-reload
+systemctl stop client-sdkdns
+systemctl stop server-sdkdns
+systemctl enable client-sdkdns
+systemctl enable server-sdkdns
+systemctl start client-sdkdns
+systemctl start server-sdkdns
+systemctl restart client-sdkdns
+systemctl restart server-sdkdns
+cd
